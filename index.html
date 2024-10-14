@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Tailoring Tool with Formatting</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/docx/7.1.0/docx.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f9;
+        }
+        h1 {
+            color: #333;
+        }
+        label {
+            font-weight: bold;
+        }
+        input[type="password"], input[type="file"], textarea, button {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #output {
+            margin-top: 20px;
+        }
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Resume Tailoring Tool</h1>
+    <p>Upload your resume (.docx), input the job description, and tailor your resume while preserving formatting using GPT.</p>
+
+    <label for="api_key">OpenAI API Key:</label>
+    <input type="password" id="api_key" placeholder="Enter your OpenAI API key" required>
+
+    <label for="resume_file">Upload Resume (.docx):</label>
+    <input type="file" id="resume_file" accept=".docx" required>
+
+    <label for="job_description">Job Description:</label>
+    <textarea id="job_description" rows="6" placeholder="Paste the job description here" required></textarea>
+
+    <button onclick="tailorResume()">Tailor Resume</button>
+
+    <div id="output">
+        <h2>Download Tailored Resume</h2>
+        <button id="download_button" style="display:none;" onclick="downloadWord()">Download Tailored Resume (.docx)</button>
+    </div>
+</div>
+
+<script>
+    // Function to read the uploaded Word document and extract text with formatting
+    async function readDocxFile(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const arrayBuffer = event.target.result;
+                // Parse the .docx file using docx.js and extract its text
+                docx.Packer.load(arrayBuffer).then(doc => {
+                    const paragraphs = doc.body.paragraphs.map(paragraph => {
+                        return paragraph.children.map(child => {
+                            return child.text;
+                        }).join("");
+                    }).join("\n");
+                    resolve({ doc, paragraphs });
+                }).catch(err => reject(err));
+            };
+            reader.onerror = (error) => reject(error);
+            reader.readAsArrayBuffer(file);
+        });
+    }
+
+    // Function to tailor resume by sending extracted text to OpenAI
+    async function tailorResume() {
+        const apiKey = document.getElementById('api_key').value;
+        const resumeFile = document.getElementById('resume_file').files[0];
+        const jobDescription = document.getElementById('job_description').value;
+
+        if (!apiKey || !resumeFile || !jobDescription) {
+            alert("Please fill in all fields.");
+            return;
+        }
+
+        try {
+            // Step 1: Read the .docx file and extract the text and document structure
+            const { doc, paragraphs } = await readDocxFile(resumeFile);
+
+            // Combine the extracted paragraphs into a single string
+            const resumeText = paragraphs.join("\n");
+
+            const prompt = `
+            Here is a resume in plain text format:
+
+            ${resumeText}
+
+            Here is a job description:
+
+            ${jobDescription}
+
+            Tailor the resume to this job description by including key phrases and minimum requirements from the job description where applicable, but ensure no false information is added. Return the tailored resume in the same structure.
+            `;
+
+            const endpoint = 'https://api.openai.com/v1/completions';
+
+            // Step 2: Make API call to OpenAI
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${apiKey}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model: "text-davinci-003",
+                    prompt: prompt,
+                    max_tokens: 2048,
+                    temperature: 0.7
+                })
+            });
+
+            const data = await response.json();
+            const tailoredText = data.choices[0].text.trim();
+
+            // Step 3: Replace original text with tailored text and preserve formatting
+            applyTailoredTextToDocx(doc, tailoredText);
+
+        } catch (error) {
+            console.error('Error:', error);
+            alert("There was an error tailoring your resume. Please check the API key and try again.");
+        }
+    }
+
+    // Function to apply tailored text to the original document structure
+    function applyTailoredTextToDocx(doc, tailoredText) {
+        const tailoredParagraphs = tailoredText.split("\n");
+        // Replace the text in the original document structure with the tailored content
+        doc.body.paragraphs.forEach((paragraph, index) => {
+            if (tailoredParagraphs[index]) {
+                paragraph.children.forEach((child, childIndex) => {
+                    if (tailoredParagraphs[index][childIndex]) {
+                        child.text = tailoredParagraphs[index][childIndex];
+                    }
+                });
+            }
+        });
+
+        // Enable the download button
+        document.getElementById("download_button").style.display = "inline";
+        document.getElementById("download_button").doc = doc;
+    }
+
+    // Function to trigger download of tailored resume as .docx
+    function downloadWord() {
+        const doc = document.getElementById("download_button").doc;
+        docx.Packer.toBlob(doc).then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "tailored_resume.docx";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        });
+    }
+</script>
+
+</body>
+</html>
