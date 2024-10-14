@@ -79,8 +79,8 @@
         const response = await fetch('prompts.txt');
         const text = await response.text();
         const prompts = text.split('\n\n');
-        resumePrompt = prompts[0].replace('{resume}', '{resume}').replace('{job_description}', '{job_description}');
-        coverLetterPrompt = prompts[1].replace('{cover_letter}', '{cover_letter}').replace('{resume}', '{resume}').replace('{job_description}', '{job_description}');
+        resumePrompt = prompts[0];
+        coverLetterPrompt = prompts[1];
     }
 
     // Function to read a Word document and extract text from it
@@ -235,6 +235,9 @@
             document.body.removeChild(a);
         });
     }
+
+    // Load the prompts when the page is loaded
+    window.onload = loadPrompts;
 </script>
 
 </body>
