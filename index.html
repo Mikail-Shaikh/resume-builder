@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Resume & Cover Letter Tailoring Tool</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/docx/7.1.0/docx.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/compromise/13.1.0/compromise.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -41,6 +42,9 @@
             border-radius: 8px;
             box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
         }
+        .keyword-container {
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
@@ -60,6 +64,13 @@
 
     <label for="job_description">Job Description:</label>
     <textarea id="job_description" rows="6" placeholder="Paste the job description here" required></textarea>
+
+    <button onclick="extractKeywords()">Extract Keywords</button>
+
+    <div class="keyword-container" id="keyword-container" style="display:none;">
+        <label for="keywords">Extracted Keywords (edit as needed):</label>
+        <textarea id="keywords" rows="4" placeholder="Modify extracted keywords here"></textarea>
+    </div>
 
     <button onclick="tailorDocuments()">Tailor Documents</button>
 
@@ -101,6 +112,23 @@
         });
     }
 
+    // Function to extract keywords from job description using Compromise
+    function extractKeywords() {
+        const jobDescription = document.getElementById('job_description').value;
+        const doc = nlp(jobDescription);
+
+        // Extract nouns and verbs (you can adjust this to extract other parts of speech)
+        const nouns = doc.nouns().out('array');
+        const verbs = doc.verbs().out('array');
+
+        // Combine nouns and verbs for a comprehensive keyword list
+        const keywords = [...new Set([...nouns, ...verbs])]; // Remove duplicates
+
+        // Display the keywords in the text area for editing
+        document.getElementById('keywords').value = keywords.join(', ');
+        document.getElementById('keyword-container').style.display = 'block';
+    }
+
     // Function to tailor both the resume and cover letter by sending extracted text to OpenAI
     async function tailorDocuments() {
         const apiKey = document.getElementById('api_key').value;
@@ -113,6 +141,9 @@
             return;
         }
 
+        // Get the keywords from the text area, allowing user modifications
+        const userKeywords = document.getElementById('keywords').value.split(',').map(keyword => keyword.trim()).filter(keyword => keyword !== '');
+
         try {
             // Load the prompts
             await loadPrompts();
@@ -124,14 +155,20 @@
             // Combine the resume text into a single string
             const resumePlainText = resumeText.join("\n");
 
-            const tailoredResumePrompt = resumePrompt
+            // Build tailored prompts using the extracted keywords
+            let tailoredResumePrompt = resumePrompt
                 .replace('{resume}', resumePlainText)
                 .replace('{job_description}', jobDescription);
 
-            const tailoredCoverLetterPrompt = coverLetterPrompt
+            let tailoredCoverLetterPrompt = coverLetterPrompt
                 .replace('{cover_letter}', coverLetterText.join("\n"))
                 .replace('{resume}', resumePlainText)
                 .replace('{job_description}', jobDescription);
+
+            if (userKeywords.length > 0) {
+                tailoredResumePrompt += `\n\nPlease focus on these skills: ${userKeywords.join(', ')}.`;
+                tailoredCoverLetterPrompt += `\n\nHighlight these skills in the letter: ${userKeywords.join(', ')}.`;
+            }
 
             const endpoint = 'https://api.openai.com/v1/completions';
 
