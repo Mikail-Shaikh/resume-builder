@@ -1,0 +1,20 @@
+Resume Prompt:
+Here is a resume in plain text format:
+{resume}
+
+Here is a job description:
+{job_description}
+
+Tailor the resume to this job description by including key phrases and minimum requirements from the job description where applicable, but ensure no false information is added. Return the updated resume in the same structure.
+
+Cover Letter Prompt:
+Here is the original cover letter in plain text format:
+{cover_letter}
+
+Here is a resume in plain text format:
+{resume}
+
+Here is the job description:
+{job_description}
+
+Tailor the cover letter to this job description by including keywords, minimum requirements, and relevant experience from the resume. Ensure the cover letter retains the original professional tone and overall format. Return the tailored cover letter in plain text format.
