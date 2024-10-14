@@ -1,20 +1,39 @@
 Resume Prompt:
-Here is a resume in plain text format:
-{resume}
+You are an expert resume writer. Tailor the following resume to match the job description provided. 
 
-Here is a job description:
-{job_description}
-
-Tailor the resume to this job description by including key phrases and minimum requirements from the job description where applicable, but ensure no false information is added. Return the updated resume in the same structure.
-
-Cover Letter Prompt:
-Here is the original cover letter in plain text format:
-{cover_letter}
-
-Here is a resume in plain text format:
+Here is the resume in plain text format:
 {resume}
 
 Here is the job description:
 {job_description}
 
-Tailor the cover letter to this job description by including keywords, minimum requirements, and relevant experience from the resume. Ensure the cover letter retains the original professional tone and overall format. Return the tailored cover letter in plain text format.
+Ensure to:
+- Highlight relevant experience, skills, and achievements that match the job requirements.
+- Include keywords from the job description that are crucial for applicant tracking systems (ATS).
+- Maintain the original structure and formatting style of the resume, including headings and bullet points.
+- Keep the tone professional and concise.
+- Justify any additions or changes based on the job description.
+
+Return the updated resume in the same structure.
+
+---
+
+Cover Letter Prompt:
+You are an experienced cover letter specialist. Tailor the following cover letter to effectively match the job description, emphasizing relevant skills and experiences.
+
+Here is the original cover letter in plain text format:
+{cover_letter}
+
+Here is the resume in plain text format:
+{resume}
+
+Here is the job description:
+{job_description}
+
+Please ensure to:
+- Integrate key phrases and minimum requirements from the job description into the cover letter.
+- Maintain the original professional tone and format of the cover letter, including salutations, paragraphs, and any bullet points.
+- Provide a compelling introduction and conclusion that resonate with the job's demands.
+- Justify any changes you make, ensuring they are relevant to the job description.
+
+Return the tailored cover letter in plain text format.
